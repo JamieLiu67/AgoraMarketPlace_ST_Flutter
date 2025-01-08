@@ -11,7 +11,7 @@ import 'package:path/path.dart' as path;
 import 'package:permission_handler/permission_handler.dart';
 
 const rtcAppId =
-    '59535f1fe3e64f3b864ae7a55bbd3196'; //------------ Need DIY -------------
+    '59535f1fe3e64f3b864ae7a55bbd3196'; //------------ Change if you need -------------
 
 void main() {
   runApp(const MyApp());
@@ -51,9 +51,15 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _isReadyPreview = false;
   bool _enableExtension = true;
   bool _enableSticker = false;
+  bool _enableBeauty = false;
+
   int rtcEnginebuild = 0;
 
   String rtcEngineVersion = 'None';
+  String stickerPath = 'Resource/stickers/AiXin.zip';
+
+  double lipsLevel = 0.99;
+  double filterLevel = 0.99;
 
   Future<String> _copyAsset(String assetPath) async {
     ByteData data = await rootBundle.load(assetPath);
@@ -147,7 +153,7 @@ class _MyHomePageState extends State<MyHomePage> {
         value: jsonEncode({}));
   }
 
-  Future<void> _enableStickerEffect(String stickerPath) async {
+  Future<void> _enableStickerEffect() async {
     final stickerRealPath = await _copyAsset(stickerPath);
     await _rtcEngine.setExtensionProperty(
         provider: 'SenseTime',
@@ -156,13 +162,90 @@ class _MyHomePageState extends State<MyHomePage> {
         value: jsonEncode({'path': stickerRealPath}));
   }
 
-  Future<void> _disableStickerEffect(String stickerPath) async {
+  Future<void> _disableStickerEffect() async {
     final stickerRealPath = await _copyAsset(stickerPath);
     await _rtcEngine.setExtensionProperty(
         provider: 'SenseTime',
         extension: 'Effect',
         key: 'st_mobile_effect_remove_package',
         value: jsonEncode({'path': stickerRealPath}));
+  }
+
+  Future<void> _enableComposer() async {
+    // Find map of st_mobile_effect_set_beauty's param in STEffectBeautyType.class, in Native Demo
+
+    final filterRealPath = await _copyAsset('Resource/style_lightly/qise.zip');
+    final lipsRealpath = await _copyAsset('Resource/makeup_lip/12自然.zip');
+    final lashRealPath =
+        await _copyAsset('Resource/makeup_eyelash/eyelashk.zip');
+    final eyeshadowRealPath =
+        await _copyAsset('Resource/makeup_eyeshadow/eyeshadowa.zip');
+
+    await _rtcEngine.setExtensionProperty(
+        provider: 'SenseTime',
+        extension: 'Effect',
+        key: 'st_mobile_effect_set_beauty',
+        value: jsonEncode({'param': 501, 'path': filterRealPath}));
+
+    await _rtcEngine.setExtensionProperty(
+        provider: 'SenseTime',
+        extension: 'Effect',
+        key: 'st_mobile_effect_set_beauty',
+        value: jsonEncode({'param': 402, 'path': lipsRealpath}));
+
+    await _rtcEngine.setExtensionProperty(
+        provider: 'SenseTime',
+        extension: 'Effect',
+        key: 'st_mobile_effect_set_beauty',
+        value: jsonEncode({'param': 408, 'path': lashRealPath}));
+
+    await _rtcEngine.setExtensionProperty(
+        provider: 'SenseTime',
+        extension: 'Effect',
+        key: 'st_mobile_effect_set_beauty',
+        value: jsonEncode({'param': 406, 'path': eyeshadowRealPath}));
+  }
+
+  Future<void> _disableComposer() async {
+    await _rtcEngine.setExtensionProperty(
+        provider: 'SenseTime',
+        extension: 'Effect',
+        key: 'st_mobile_effect_set_beauty',
+        value: jsonEncode({'param': 501, 'path': ''}));
+
+    await _rtcEngine.setExtensionProperty(
+        provider: 'SenseTime',
+        extension: 'Effect',
+        key: 'st_mobile_effect_set_beauty',
+        value: jsonEncode({'param': 402, 'path': ''}));
+
+    await _rtcEngine.setExtensionProperty(
+        provider: 'SenseTime',
+        extension: 'Effect',
+        key: 'st_mobile_effect_set_beauty',
+        value: jsonEncode({'param': 408, 'path': ''}));
+
+    await _rtcEngine.setExtensionProperty(
+        provider: 'SenseTime',
+        extension: 'Effect',
+        key: 'st_mobile_effect_set_beauty',
+        value: jsonEncode({'param': 406, 'path': ''}));
+  }
+
+  Future<void> _setLipsStrength(double strenth) async {
+    await _rtcEngine.setExtensionProperty(
+        provider: 'SenseTime',
+        extension: 'Effect',
+        key: 'st_mobile_effect_set_beauty_strength',
+        value: jsonEncode({'param': 402, 'val': strenth}));
+  }
+
+  Future<void> _setfilterStrength(double strenth) async {
+    await _rtcEngine.setExtensionProperty(
+        provider: 'SenseTime',
+        extension: 'Effect',
+        key: 'st_mobile_effect_set_beauty_strength',
+        value: jsonEncode({'param': 501, 'val': strenth}));
   }
 
   Future<void> _initSTExtension() async {
@@ -244,13 +327,56 @@ class _MyHomePageState extends State<MyHomePage> {
                   style: TextButton.styleFrom(foregroundColor: Colors.cyan),
                   onPressed: () async {
                     setState(() {
+                      _enableBeauty = !_enableBeauty;
+                    });
+
+                    if (_enableBeauty) {
+                      _enableComposer();
+                    } else {
+                      _disableComposer();
+                    }
+                  },
+                  child: Text(_enableBeauty ? 'disableBeauty' : 'enableBeauty'),
+                ),
+                const Text('Lips Level'),
+                Slider(
+                    value: lipsLevel,
+                    min: 0.0,
+                    max: 1.0,
+                    onChanged: _enableBeauty
+                        ? (double value) async {
+                            setState(() {
+                              lipsLevel = value;
+                            });
+
+                            _setLipsStrength(lipsLevel);
+                          }
+                        : null),
+                const Text('Filter Level'),
+                Slider(
+                    value: filterLevel,
+                    min: 0.0,
+                    max: 1.0,
+                    onChanged: _enableBeauty
+                        ? (double value) async {
+                            setState(() {
+                              filterLevel = value;
+                            });
+
+                            _setfilterStrength(filterLevel);
+                          }
+                        : null),
+                TextButton(
+                  style: TextButton.styleFrom(foregroundColor: Colors.yellow),
+                  onPressed: () async {
+                    setState(() {
                       _enableSticker = !_enableSticker;
                     });
 
                     if (_enableSticker) {
-                      _enableStickerEffect('Resource/stickers/AiXin.zip');
+                      _enableStickerEffect();
                     } else {
-                      _disableStickerEffect('Resource/stickers/AiXin.zip');
+                      _disableStickerEffect();
                     }
                   },
                   child:
