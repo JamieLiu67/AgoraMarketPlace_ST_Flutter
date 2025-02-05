@@ -12,6 +12,14 @@ import 'package:permission_handler/permission_handler.dart';
 
 const rtcAppId =
     '59535f1fe3e64f3b864ae7a55bbd3196'; //------------ Change if you need -------------
+const aiModelPath =
+    'Resource/models/M_SenseME_Face_Video_Template_p_3.9.0.3.model';
+const stickerPath = 'Resource/stickers/AiXin.zip';
+const filterPath = 'Resource/style_lightly/qise.zip';
+const lipsPath = 'Resource/makeup_lip/12自然.zip';
+const eyelashPath = 'Resource/makeup_eyelash/eyelashk.zip';
+const eyeshadowPath = 'Resource/makeup_eyeshadow/eyeshadowa.zip';
+const licensePath = 'Resource/license/SenseMARS_Effects.lic';
 
 void main() {
   runApp(const MyApp());
@@ -55,40 +63,26 @@ class _MyHomePageState extends State<MyHomePage> {
 
   int rtcEnginebuild = 0;
 
-  String rtcEngineVersion = 'None';
-  String stickerPath = 'Resource/stickers/AiXin.zip';
+  String rtcEngineVersion = 'Loading...';
 
   double lipsLevel = 0.99;
   double filterLevel = 0.99;
 
-  Future<String> _copyAsset(String assetPath) async {
-    ByteData data = await rootBundle.load(assetPath);
-    List<int> bytes =
-        data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
-
-    Directory appDocDir = await getApplicationDocumentsDirectory();
-
-    final dirname = path.dirname(assetPath);
-
-    Directory dstDir = Directory(path.join(appDocDir.path, dirname));
-    if (!(await dstDir.exists())) {
-      await dstDir.create(recursive: true);
-    }
-
-    String p = path.join(appDocDir.path, path.basename(assetPath));
-    final file = File(p);
-    if (!(await file.exists())) {
-      await file.create();
-      await file.writeAsBytes(bytes);
-    }
-
-    return file.absolute.path;
+  @override
+  void initState() {
+    super.initState();
+    _init();
   }
 
-  Future<void> _requestPermissionIfNeed() async {
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      await [Permission.microphone, Permission.camera].request();
-    }
+  @override
+  void dispose() {
+    _dispose();
+    super.dispose();
+  }
+
+  Future<void> _dispose() async {
+    _rtcEngine.unregisterEventHandler(_rtcEngineEventHandler);
+    await _rtcEngine.release();
   }
 
   Future<void> _init() async {
@@ -137,20 +131,55 @@ class _MyHomePageState extends State<MyHomePage> {
     rtcEnginebuild = sdkversion.build ?? 0;
   }
 
+  Future<String> _copyAsset(String assetPath) async {
+    ByteData data = await rootBundle.load(assetPath);
+    List<int> bytes =
+        data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+
+    Directory appDocDir = await getApplicationDocumentsDirectory();
+
+    final dirname = path.dirname(assetPath);
+
+    Directory dstDir = Directory(path.join(appDocDir.path, dirname));
+    if (!(await dstDir.exists())) {
+      await dstDir.create(recursive: true);
+    }
+
+    String p = path.join(appDocDir.path, path.basename(assetPath));
+    final file = File(p);
+    if (!(await file.exists())) {
+      await file.create();
+      await file.writeAsBytes(bytes);
+    }
+
+    return file.absolute.path;
+  }
+
+  Future<void> _requestPermissionIfNeed() async {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      await [Permission.microphone, Permission.camera].request();
+    }
+  }
+
   Future<void> _loadAIModels() async {
-    final bundleRealPath = await _copyAsset(
-        'Resource/models/M_SenseME_Face_Video_Template_p_3.9.0.3.model');
+    final aiModelRealPath = await _copyAsset(aiModelPath);
     await _rtcEngine.setExtensionProperty(
         provider: 'SenseTime',
         extension: 'Effect',
         key: 'st_mobile_human_action_create',
-        value: jsonEncode({'model_path': bundleRealPath, 'config': 255}));
+        value: jsonEncode({'model_path': aiModelRealPath, 'config': 255}));
 
     await _rtcEngine.setExtensionProperty(
         provider: 'SenseTime',
         extension: 'Effect',
         key: 'st_mobile_effect_create_handle',
         value: jsonEncode({}));
+
+    await _rtcEngine.setExtensionProperty(
+        provider: 'SenseTime',
+        extension: 'Effect',
+        key: 'st_mobile_human_action_detect_enable',
+        value: jsonEncode({'enable': true}));
   }
 
   Future<void> _enableStickerEffect() async {
@@ -174,12 +203,10 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _enableComposer() async {
     // Find map of st_mobile_effect_set_beauty's param in STEffectBeautyType.class, in Native Demo
 
-    final filterRealPath = await _copyAsset('Resource/style_lightly/qise.zip');
-    final lipsRealpath = await _copyAsset('Resource/makeup_lip/12自然.zip');
-    final lashRealPath =
-        await _copyAsset('Resource/makeup_eyelash/eyelashk.zip');
-    final eyeshadowRealPath =
-        await _copyAsset('Resource/makeup_eyeshadow/eyeshadowa.zip');
+    final filterRealPath = await _copyAsset(filterPath);
+    final lipsRealpath = await _copyAsset(lipsPath);
+    final eyelashRealPath = await _copyAsset(eyelashPath);
+    final eyeshadowRealPath = await _copyAsset(eyeshadowPath);
 
     await _rtcEngine.setExtensionProperty(
         provider: 'SenseTime',
@@ -197,7 +224,7 @@ class _MyHomePageState extends State<MyHomePage> {
         provider: 'SenseTime',
         extension: 'Effect',
         key: 'st_mobile_effect_set_beauty',
-        value: jsonEncode({'param': 408, 'path': lashRealPath}));
+        value: jsonEncode({'param': 408, 'path': eyelashRealPath}));
 
     await _rtcEngine.setExtensionProperty(
         provider: 'SenseTime',
@@ -249,33 +276,14 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _initSTExtension() async {
-    final bundleRealPath =
-        await _copyAsset('Resource/license/SenseMARS_Effects.lic');
+    final licenseRealPath = await _copyAsset(licensePath);
     await _rtcEngine.setExtensionProperty(
         provider: 'SenseTime',
         extension: 'Effect',
         key: 'st_mobile_check_activecode',
-        value: jsonEncode({'license_path': bundleRealPath}));
+        value: jsonEncode({'license_path': licenseRealPath}));
 
-    _loadAIModels();
-  }
-
-  Future<void> _dispose() async {
-    _rtcEngine.unregisterEventHandler(_rtcEngineEventHandler);
-    await _rtcEngine.release();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-
-    _init();
-  }
-
-  @override
-  void dispose() {
-    _dispose();
-    super.dispose();
+    await _loadAIModels();
   }
 
   @override
@@ -331,9 +339,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     });
 
                     if (_enableBeauty) {
-                      _enableComposer();
+                      await _enableComposer();
                     } else {
-                      _disableComposer();
+                      await _disableComposer();
                     }
                   },
                   child: Text(_enableBeauty ? 'disableBeauty' : 'enableBeauty'),
@@ -374,9 +382,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     });
 
                     if (_enableSticker) {
-                      _enableStickerEffect();
+                      await _enableStickerEffect();
                     } else {
-                      _disableStickerEffect();
+                      await _disableStickerEffect();
                     }
                   },
                   child:

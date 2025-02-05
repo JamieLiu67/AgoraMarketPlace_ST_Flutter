@@ -44,6 +44,8 @@ app.*.map.json
 
 
 android/libs/extension_aar-release.aar
+ios/AgoraSenseTimeExtension.framework.dSYM
+ios/AgoraSenseTimeExtension.framework
 
 Resource/
 pubspec.lock
