@@ -13,10 +13,9 @@ import 'package:permission_handler/permission_handler.dart';
 const rtcAppId =
     '59535f1fe3e64f3b864ae7a55bbd3196'; //------------ Change if you need -------------
 const aiModelPath =
-    'Resource/models/M_SenseME_Face_Video_Template_p_3.9.0.3.model';
+    'Resource/models/M_SenseME_Face_Video_Template_p_4.0.0.model';
 const stickerPath = 'Resource/stickers/AiXin.zip';
-const filterPath = 'Resource/style_lightly/qise.zip';
-const lipsPath = 'Resource/makeup_lip/12自然.zip';
+const lipsPath = 'Resource/makeup_lip/6自然.zip';
 const eyelashPath = 'Resource/makeup_eyelash/eyelashk.zip';
 const eyeshadowPath = 'Resource/makeup_eyeshadow/eyeshadowa.zip';
 const licensePath = 'Resource/license/SenseMARS_Effects.lic';
@@ -95,20 +94,23 @@ class _MyHomePageState extends State<MyHomePage> {
     ));
 
     _rtcEngineEventHandler = RtcEngineEventHandler(
-      onExtensionEvent: (provider, extension, key, value) {
+      onExtensionEventWithContext:
+          (ExtensionContext context, String key, String value) {
         debugPrint(
-            '[onExtensionEvent] provider: $provider, extension: $extension, key: $key, value: $value');
+            '[onExtensionEventWithContext] ExtensionContext: $context, key: $key, value: $value');
       },
-      onExtensionStarted: (provider, extension) {
+      onExtensionStartedWithContext: (ExtensionContext context) {
         debugPrint(
-            '[onExtensionStarted] provider: $provider, extension: $extension');
-        if (provider == 'SenseTime' && extension == 'Effect') {
+            '[onExtensionStartedWithContext] ExtensionContext: $context');
+        if (context.providerName == 'SenseTime' &&
+            context.extensionName == 'Effect') {
           _initSTExtension();
         }
       },
-      onExtensionError: (provider, extension, error, message) {
+      onExtensionErrorWithContext:
+          (ExtensionContext context, int error, String message) {
         debugPrint(
-            '[onExtensionError] provider: $provider, extension: $extension, error: $error, message: $message');
+            '[onExtensionErrorWithContext] ExtensionContext: $context, error: $error, message: $message');
       },
     );
     _rtcEngine.registerEventHandler(_rtcEngineEventHandler);
@@ -203,16 +205,9 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _enableComposer() async {
     // Find map of st_mobile_effect_set_beauty's param in STEffectBeautyType.class, in Native Demo
 
-    final filterRealPath = await _copyAsset(filterPath);
     final lipsRealpath = await _copyAsset(lipsPath);
     final eyelashRealPath = await _copyAsset(eyelashPath);
     final eyeshadowRealPath = await _copyAsset(eyeshadowPath);
-
-    await _rtcEngine.setExtensionProperty(
-        provider: 'SenseTime',
-        extension: 'Effect',
-        key: 'st_mobile_effect_set_beauty',
-        value: jsonEncode({'param': 501, 'path': filterRealPath}));
 
     await _rtcEngine.setExtensionProperty(
         provider: 'SenseTime',

@@ -44,7 +44,7 @@ android {
         // TODO: Change the applicationId to your own, if you have changed your own license.bundle
         applicationId "io.agora.rte.extension.sensetime"
 
-        minSdkVersion flutter.minSdkVersion
+        minSdkVersion 21
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
